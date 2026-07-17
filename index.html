@@ -1,0 +1,464 @@
+<!doctype html>
+<html lang="de" dir="ltr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0f766e" />
+    <title>DeutschMeister C1</title>
+    <script>
+      try {
+        const savedTheme = localStorage.getItem("aspekte-theme");
+        document.documentElement.dataset.theme = savedTheme === "dark" ? "dark" : "light";
+      } catch {
+        document.documentElement.dataset.theme = "light";
+      }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./flashcards.css" />
+    <link rel="stylesheet" href="./motivation.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="brand">
+          <div class="brand-mark">D</div>
+          <div>
+            <h1>DeutschMeister <span>C1</span></h1>
+            <p>Dein persönlicher Lehrer für Aspekte neu</p>
+          </div>
+        </div>
+        <div class="top-actions">
+          <nav class="workspace-switcher" aria-label="Arbeitsbereiche">
+            <button id="lessonViewButton" class="active" type="button">Unterricht</button>
+            <button id="vocabViewButton" type="button">Wörter <span id="dueCardsBadge">0</span></button>
+          </nav>
+          <span id="bookBadge" class="status-pill warning"><i></i> Buch fehlt</span>
+          <span id="apiBadge" class="status-pill warning"><i></i> Verbindung fehlt</span>
+          <button id="themeToggle" class="theme-toggle" type="button" aria-pressed="false" title="Dunkelmodus aktivieren">
+            <span id="themeIcon" aria-hidden="true">☾</span>
+            <span id="themeLabel">Dunkelmodus</span>
+          </button>
+          <button id="changeBookButton" class="ghost-button">Buch wechseln</button>
+        </div>
+      </header>
+
+      <section class="runtime-bar panel" aria-label="KI- und Verbrauchseinstellungen">
+        <label class="runtime-control">
+          <span>Anbieter</span>
+          <select id="providerSelect">
+            <option value="openai">OpenAI</option>
+            <option value="google">Google Gemini</option>
+          </select>
+        </label>
+        <label class="runtime-control model-control">
+          <span>Modell</span>
+          <select id="modelSelect"></select>
+        </label>
+        <label class="runtime-control">
+          <span>Stimme</span>
+          <select id="voiceSelect"></select>
+        </label>
+        <div class="runtime-metric">
+          <span>Verbrauch</span>
+          <strong id="usageTokens">0 Token</strong>
+          <small id="usageBreakdown">Eingabe 0 · Ausgabe 0</small>
+        </div>
+        <div class="runtime-metric cost-metric">
+          <span>Sitzungskosten</span>
+          <strong id="sessionCost">$0.0000</strong>
+          <small id="costNote">Schätzung nach offiziellem Preis</small>
+        </div>
+      </section>
+
+      <section class="motivation-bar panel" aria-label="Punkte und Lernmotivation">
+        <div class="motivation-identity">
+          <span class="motivation-mark" aria-hidden="true">✦</span>
+          <div>
+            <small>MEIN FORTSCHRITT</small>
+            <strong id="motivationLevel">Stufe 1 · Starter</strong>
+          </div>
+        </div>
+        <div class="motivation-level-progress">
+          <div>
+            <strong id="motivationXp">0 XP</strong>
+            <small id="motivationNext">Noch 150 XP bis Wortfinder</small>
+          </div>
+          <span class="motivation-track"><i id="motivationProgress"></i></span>
+        </div>
+        <div class="motivation-daily">
+          <div><span>Tagesziel</span><strong id="motivationDaily">0/10</strong></div>
+          <span class="motivation-track daily"><i id="motivationDailyBar"></i></span>
+        </div>
+        <div class="motivation-streak">
+          <span aria-hidden="true">♨</span>
+          <div><small>SERIE</small><strong id="motivationStreak">0 Tage</strong></div>
+        </div>
+        <div class="motivation-actions">
+          <button id="motivationSound" type="button" aria-pressed="true">🔊 Töne an</button>
+          <button id="motivationReminder" type="button">
+            <span>🔔 Erinnerung</span>
+            <small id="motivationReminderStatus">Aus</small>
+          </button>
+        </div>
+      </section>
+
+      <main class="layout">
+        <aside class="chapters-panel panel">
+          <div class="panel-heading">
+            <div>
+              <span class="eyebrow">ASPEKTE NEU C1</span>
+              <h2>Modul wählen</h2>
+            </div>
+            <span id="progressPercent" class="progress-number">0%</span>
+          </div>
+          <div class="progress-track"><span id="progressBar"></span></div>
+          <label class="search-box">
+            <span>⌕</span>
+            <input id="moduleSearch" type="search" placeholder="Thema suchen …" />
+          </label>
+          <div id="chapterList" class="chapter-list"></div>
+        </aside>
+
+        <section class="lesson-column">
+          <section class="hero panel">
+            <div class="hero-copy">
+              <span id="lessonTag" class="lesson-tag">KAPITEL 1 · MODUL 1</span>
+              <h2 id="lessonTitle">Zeitgefühl</h2>
+              <p id="lessonGoal">Zeitempfinden zusammenfassen; Konnektoren</p>
+              <div class="lesson-meta">
+                <span id="lessonPages">▤ Seiten 10–11</span>
+                <span>◷ Lehrergeführte Stunde</span>
+                <span>◎ Deutsch C1</span>
+              </div>
+            </div>
+            <div class="teacher-orb" id="teacherOrb">
+              <div class="orb-core">D</div>
+              <span class="orbit orbit-one"></span>
+              <span class="orbit orbit-two"></span>
+            </div>
+          </section>
+
+          <section class="session-card panel">
+            <div class="session-topline">
+              <div class="live-state">
+                <span id="liveDot" class="live-dot"></span>
+                <div>
+                  <strong id="sessionStatus">Bereit für den Unterricht</strong>
+                  <small id="sessionHint">Modul wählen und starten</small>
+                </div>
+              </div>
+              <div id="timer" class="timer">00:00</div>
+            </div>
+
+            <div class="wave" id="wave" aria-hidden="true">
+              <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+            </div>
+
+            <div class="session-actions">
+              <button id="startButton" class="primary-button"><span>▶</span> Stunde starten</button>
+              <button id="fallbackButton" class="fallback-button"><span>⎘</span> Ohne API nutzen</button>
+              <button id="muteButton" class="round-button" disabled title="Mikrofon stummschalten">🎙</button>
+              <button id="stopButton" class="round-button danger" disabled title="Stunde beenden">■</button>
+            </div>
+
+            <div class="quick-commands">
+              <button data-command="Kurz erklären">Kurz erklären</button>
+              <button data-command="Genauer erklären">Genauer erklären</button>
+              <button data-command="Aussprachemodus">Aussprachemodus</button>
+              <button data-command="Prüfungsmodus">Prüfungsmodus</button>
+              <button data-command="Zurück zum Buch">Zurück zum Buch</button>
+              <button data-command="Checkpoint">Checkpoint</button>
+            </div>
+          </section>
+
+          <section class="transcript-card panel">
+            <div class="panel-heading compact">
+              <div>
+                <span class="eyebrow">LIVE PROTOKOLL</span>
+                <h2>Gespräch und Korrekturen</h2>
+              </div>
+              <button id="clearTranscript" class="text-button">Leeren</button>
+            </div>
+            <div id="transcript" class="transcript" aria-live="polite">
+              <div class="empty-state">
+                <span>“</span>
+                <p>Hier erscheinen während der Stunde deine Beiträge, die Antworten des Lehrers und alle Korrekturen.</p>
+              </div>
+            </div>
+          </section>
+        </section>
+
+        <aside class="study-panel">
+          <section class="panel page-panel">
+            <div class="panel-heading compact">
+              <div>
+                <span class="eyebrow">MATERIAL</span>
+                <h2>Unterrichtsseiten</h2>
+              </div>
+              <span id="pageCount" class="mini-badge">2 Seiten</span>
+            </div>
+            <div id="pagePreview" class="page-preview">
+              <div class="page-placeholder">Nach dem Hinzufügen des Buches erscheinen hier die Modulseiten.</div>
+            </div>
+          </section>
+
+          <div id="guideBackdrop" class="guide-backdrop hidden" aria-hidden="true"></div>
+          <section id="moduleGuidePanel" class="panel module-guide-panel" aria-labelledby="moduleGuideTitle">
+            <div class="panel-heading compact">
+              <div>
+                <span class="eyebrow">MODUL-KOMPASS</span>
+                <h2 id="moduleGuideTitle">Modulkompass</h2>
+              </div>
+              <div class="module-guide-actions">
+                <span id="homeworkProgress" class="mini-badge">0/2 Aufgaben</span>
+                <button id="toggleGuideSize" class="guide-expand-button" type="button" aria-controls="moduleGuidePanel" aria-expanded="false" aria-label="Modulkompass vergrößern" title="Modulkompass vergrößern">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path class="expand-mark" d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5" />
+                    <path class="collapse-mark" d="M4 9h5V4M20 9h-5V4M4 15h5v5M20 15h-5v5" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <details class="guide-section" open>
+              <summary>Lernziele</summary>
+              <ul id="guideObjectives" class="guide-list"></ul>
+            </details>
+            <details class="guide-section">
+              <summary>Aktiver Wortschatz</summary>
+              <div id="guideVocabulary" class="vocabulary-list"></div>
+            </details>
+            <details class="guide-section">
+              <summary>C1-Strukturen</summary>
+              <ul id="guideStructures" class="guide-list language-list" dir="ltr"></ul>
+            </details>
+            <details class="guide-section">
+              <summary>Beherrschungskriterien</summary>
+              <ul id="guideMastery" class="guide-list"></ul>
+            </details>
+            <details class="guide-section homework-section" open>
+              <summary>Hausaufgabe</summary>
+              <div id="guideHomework" class="homework-list"></div>
+            </details>
+            <p class="guide-source">Lernziele und Wortschatz sind auf die Modulseiten und den offiziellen Klett-Kapitelwortschatz abgestimmt.</p>
+          </section>
+
+          <section class="panel checkpoint-panel">
+            <div class="panel-heading compact">
+              <div>
+                <span class="eyebrow">FORTSCHRITT</span>
+                <h2>Letzter Checkpoint</h2>
+              </div>
+            </div>
+            <p id="checkpointText">Noch kein Checkpoint gespeichert. Fordere ihn am Ende der ersten Stunde an.</p>
+            <button id="copyCheckpoint" class="secondary-button" disabled>Checkpoint kopieren</button>
+            <button id="markComplete" class="secondary-button subtle">Modul als abgeschlossen markieren</button>
+          </section>
+        </aside>
+      </main>
+
+      <main id="vocabularyWorkspace" class="vocabulary-workspace workspace-hidden">
+        <section class="vocabulary-hero panel">
+          <div class="vocabulary-hero-copy">
+            <span class="vocabulary-kicker">WORTTRAINER C1 · OHNE KI-KOSTEN</span>
+            <h2>Deutsche Wörter so lernen, <span>dass sie bleiben</span></h2>
+            <p>Aktives Abrufen, verteiltes Wiederholen, freie Wikimedia-Bilder, deutsche Aussprache und optionales Sprechtraining mit ChatGPT.</p>
+            <div class="vocabulary-hero-actions">
+              <label>
+                <span>Modulwortschatz</span>
+                <select id="flashcardModuleSelect"></select>
+              </label>
+              <button id="addModuleWords" class="primary-button" type="button">Modulwörter hinzufügen</button>
+              <button id="shareVocabularyPrompt" class="voice-coach-button" type="button">🎙 Mit ChatGPT sprechen</button>
+            </div>
+          </div>
+          <div class="vocabulary-stats" aria-label="Wortschatzstatistik">
+            <div><span>Wörter insgesamt</span><strong id="flashcardTotal">0</strong></div>
+            <div><span>Heute fällig</span><strong id="flashcardDue">0</strong></div>
+            <div><span>Sicher gelernt</span><strong id="flashcardMastered">0</strong></div>
+            <div><span>Lerntage</span><strong id="flashcardStreak">0</strong></div>
+          </div>
+        </section>
+
+        <section class="flashcard-layout">
+          <section class="review-deck panel">
+            <div class="review-toolbar">
+              <div>
+                <span class="eyebrow">ACTIVE RECALL</span>
+                <h2>Wörter wiederholen</h2>
+              </div>
+              <div id="reviewFilters" class="review-filters" aria-label="Wiederholung filtern">
+                <button type="button" data-filter="due" class="active">Fällig</button>
+                <button type="button" data-filter="new">Neu</button>
+                <button type="button" data-filter="hard">Schwierig</button>
+                <button type="button" data-filter="all">Alle</button>
+                <button type="button" data-filter="mastered">Gelernt</button>
+              </div>
+            </div>
+            <div class="review-progress-row">
+              <span id="reviewProgressText">0 / 0</span>
+              <div class="review-progress-track"><span id="reviewProgressBar"></span></div>
+            </div>
+
+            <div id="flashcardStage" class="flashcard-stage" aria-live="polite"></div>
+
+            <div id="reviewRatingButtons" class="review-rating-buttons workspace-hidden" aria-label="Erinnerung bewerten">
+              <button type="button" data-rating="again"><b>Noch einmal</b><span>in 10 Minuten</span></button>
+              <button type="button" data-rating="hard"><b>Schwierig</b><span>in 1 Tag</span></button>
+              <button type="button" data-rating="good"><b>Gut</b><span>größerer Abstand</span></button>
+              <button type="button" data-rating="easy"><b>Leicht</b><span>in 4+ Tagen</span></button>
+            </div>
+            <div class="flashcard-shortcuts">Leertaste: Karte wenden · Tasten 1–4: bewerten</div>
+          </section>
+
+          <aside class="word-tools">
+            <details class="word-entry panel" open>
+              <summary><span>＋</span> Eigene Wörter hinzufügen</summary>
+              <p>Eine Zeile pro Wort: <b>Wort | deutsche Erklärung | Beispielsatz | Bildsuche</b></p>
+              <textarea id="vocabularyInput" dir="ltr" spellcheck="false" placeholder="der Zeitdruck | das Gefühl, zu wenig Zeit zu haben | Unter Zeitdruck mache ich mehr Fehler. | Zeitdruck&#10;zuverlässig | Absprachen sicher einhaltend | Sie ist äußerst zuverlässig."></textarea>
+              <label class="auto-image-option">
+                <input id="autoImageSearch" type="checkbox" checked />
+                <span><b>Freies Bild automatisch suchen</b><small>Direkte Suche in Wikimedia Commons, ohne kostenpflichtige API.</small></span>
+              </label>
+              <button id="createVocabularyCards" class="primary-button full-width" type="button">Karten erstellen</button>
+              <p id="vocabularyInputStatus" class="tool-status" aria-live="polite"></p>
+            </details>
+
+            <section class="deck-tools panel">
+              <div class="panel-heading compact">
+                <div><span class="eyebrow">BACKUP</span><h2>Wörter sichern und übertragen</h2></div>
+              </div>
+              <p>Wörter und Lernfortschritt bleiben auf deinem Gerät. Exportiere eine Sicherung für ein anderes Gerät.</p>
+              <div class="deck-tool-buttons">
+                <button id="exportVocabulary" type="button">JSON exportieren</button>
+                <label for="importVocabulary">JSON importieren</label>
+                <input id="importVocabulary" type="file" accept="application/json,.json" />
+              </div>
+            </section>
+          </aside>
+        </section>
+
+        <section class="vocabulary-library panel">
+          <div class="panel-heading compact">
+            <div><span class="eyebrow">MEINE WÖRTER</span><h2>Wortliste</h2></div>
+            <span id="vocabularyListCount" class="mini-badge">0 Wörter</span>
+          </div>
+          <div id="vocabularyCardList" class="vocabulary-card-list"></div>
+        </section>
+      </main>
+    </div>
+
+    <div id="bookModal" class="modal-backdrop hidden">
+      <div class="modal">
+        <div class="upload-icon">▤</div>
+        <span class="eyebrow">EINMALIGE EINRICHTUNG</span>
+        <h2>Aspekte neu C1 hinzufügen</h2>
+        <p>Wähle deine PDF-Datei. Sie bleibt nur in diesem Browser; die benötigten Modulseiten werden automatisch und ohne Bildschirmfreigabe gelesen.</p>
+        <label class="file-picker">
+          <input id="bookInput" type="file" accept="application/pdf,.pdf" />
+          <span>Buchdatei wählen</span>
+        </label>
+        <small id="uploadStatus">Die Datei wird nicht auf eine öffentliche Website hochgeladen.</small>
+        <button id="closeModal" class="text-button">Schließen</button>
+      </div>
+    </div>
+
+    <div id="motivationModal" class="modal-backdrop hidden">
+      <div class="modal motivation-modal">
+        <button id="closeMotivationModal" class="modal-close" aria-label="Schließen">×</button>
+        <div class="motivation-modal-heading">
+          <span class="motivation-mark large" aria-hidden="true">✦</span>
+          <div>
+            <span class="eyebrow">MOTIVATION</span>
+            <h2>Punkte, Abzeichen und Erinnerung</h2>
+            <p>Belohnt werden echte Lernaktionen. Die Bewertung einer Karte verändert die Punktzahl nicht.</p>
+          </div>
+        </div>
+
+        <div class="motivation-modal-summary">
+          <div><span>Aktuelle Stufe</span><strong id="motivationModalLevel">Stufe 1 · Starter</strong></div>
+          <div><span>Gesamtpunktzahl</span><strong id="motivationModalXp">0 XP</strong></div>
+        </div>
+
+        <div class="point-rules" aria-label="Punkteregeln">
+          <span><b>+5 XP</b> fälliges Wort wiederholt</span>
+          <span><b>+25 XP</b> Hausaufgabe erledigt</span>
+          <span><b>+120 XP</b> Modul abgeschlossen</span>
+          <span><b>+25 XP</b> Tagesziel erreicht</span>
+        </div>
+
+        <section class="achievement-section">
+          <div class="motivation-section-title">
+            <div><span class="eyebrow">ABZEICHEN</span><h3>Deine Erfolge</h3></div>
+            <small>Neue Abzeichen werden automatisch freigeschaltet.</small>
+          </div>
+          <div id="achievementGrid" class="achievement-grid"></div>
+        </section>
+
+        <section class="reminder-section">
+          <div class="motivation-section-title">
+            <div><span class="eyebrow">LERNTROUTINE</span><h3>Tägliche Erinnerung</h3></div>
+          </div>
+          <div class="reminder-controls">
+            <label class="reminder-switch">
+              <input id="reminderEnabled" type="checkbox" />
+              <span><b>Browser-Benachrichtigung</b><small>Erinnert dich, solange die App geöffnet oder im Hintergrund aktiv ist.</small></span>
+            </label>
+            <label class="reminder-time">
+              <span>Uhrzeit</span>
+              <input id="reminderTime" type="time" value="19:00" />
+            </label>
+          </div>
+          <p id="reminderPermission" class="reminder-permission">Der Browser fragt beim Speichern nach deiner Erlaubnis.</p>
+          <div class="reminder-actions">
+            <button id="saveReminder" class="primary-button" type="button">Erinnerung speichern</button>
+            <button id="downloadReminderCalendar" class="ghost-button" type="button">Kalender-Erinnerung herunterladen</button>
+          </div>
+          <small class="reminder-note">Die Kalenderdatei ist die zuverlässige Variante für Erinnerungen bei vollständig geschlossener App und funktioniert auf Mobilgerät und Computer.</small>
+        </section>
+      </div>
+    </div>
+
+    <div id="promptModal" class="modal-backdrop hidden">
+      <div class="modal prompt-modal">
+        <button id="closePromptModal" class="modal-close" aria-label="Schließen">×</button>
+        <div class="prompt-modal-heading">
+          <div class="upload-icon prompt-icon">⎘</div>
+          <div>
+            <span class="eyebrow">ALTERNATIVE OHNE API</span>
+            <h2 id="promptModalTitle">Modulprompt</h2>
+            <p id="promptModalMeta" dir="ltr"></p>
+          </div>
+        </div>
+
+        <div class="fallback-steps">
+          <span><b>1</b> Lade Aspekte neu C1 in ChatGPT hoch.</span>
+          <span><b>2</b> Kopiere den folgenden Prompt und sende ihn als Text.</span>
+          <span><b>3</b> Öffne nach der ersten Antwort den Sprachmodus.</span>
+        </div>
+
+        <label id="checkpointOption" class="checkpoint-option hidden">
+          <input id="includeCheckpoint" type="checkbox" />
+          <span>Letzten Checkpoint einfügen und die Stunde an derselben Stelle fortsetzen</span>
+        </label>
+
+        <textarea id="fallbackPromptText" class="prompt-text" readonly spellcheck="false" dir="ltr"></textarea>
+
+        <div class="prompt-actions">
+          <button id="copyFallbackPrompt" class="primary-button">Prompt kopieren</button>
+          <button id="shareFallbackPrompt" class="ghost-button">Mit Mobilgerät teilen</button>
+          <button id="openChatGpt" class="ghost-button">ChatGPT öffnen</button>
+          <button id="downloadFallbackPrompt" class="ghost-button">TXT herunterladen</button>
+        </div>
+        <small>Auf dem Mobilgerät kannst du den Prompt mit ChatGPT teilen oder kopieren und anschließend den Sprachmodus öffnen. Dabei entstehen keine API-Kosten.</small>
+      </div>
+    </div>
+
+    <div id="motivationToasts" class="motivation-toasts" aria-live="polite" aria-atomic="true"></div>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
