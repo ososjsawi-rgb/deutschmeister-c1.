@@ -1,0 +1,527 @@
+.motivation-bar {
+  width: min(1580px, calc(100% - 40px));
+  min-height: 76px;
+  margin: 12px auto 0;
+  padding: 12px 16px;
+  display: grid;
+  grid-template-columns: minmax(190px, .8fr) minmax(260px, 1.3fr) minmax(170px, .75fr) minmax(110px, .5fr) auto;
+  align-items: center;
+  gap: 18px;
+}
+
+.motivation-identity,
+.motivation-streak {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.motivation-identity small,
+.motivation-streak small {
+  display: block;
+  color: var(--muted);
+  font: 800 8px/1.3 "Manrope";
+  letter-spacing: .8px;
+}
+
+.motivation-identity strong,
+.motivation-streak strong {
+  display: block;
+  margin-top: 3px;
+  color: var(--ink);
+  font: 800 12px/1.25 "Manrope";
+}
+
+.motivation-mark {
+  width: 39px;
+  height: 39px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 13px;
+  background: linear-gradient(145deg, #ffcf58, #e79b2f);
+  color: #65440b;
+  box-shadow: 0 8px 18px rgba(231, 164, 59, .24);
+  font-size: 19px;
+}
+
+.motivation-mark.large {
+  width: 54px;
+  height: 54px;
+  border-radius: 17px;
+  font-size: 25px;
+}
+
+.motivation-level-progress,
+.motivation-daily {
+  display: grid;
+  gap: 7px;
+}
+
+.motivation-level-progress > div,
+.motivation-daily > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.motivation-level-progress strong,
+.motivation-daily strong {
+  color: var(--teal);
+  font: 800 11px/1 "Manrope";
+}
+
+.motivation-level-progress small,
+.motivation-daily span {
+  color: var(--muted);
+  font-size: 8px;
+}
+
+.motivation-track {
+  width: 100%;
+  height: 6px;
+  display: block;
+  overflow: hidden;
+  border-radius: 99px;
+  background: #edf3f1;
+}
+
+.motivation-track i {
+  width: 0;
+  height: 100%;
+  display: block;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #e7a43b, #ffd367);
+  transition: width .35s ease;
+}
+
+.motivation-track.daily i {
+  background: linear-gradient(90deg, #0f766e, #4bc59f);
+}
+
+.motivation-streak > span {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+  background: #fff2df;
+  color: #d67c21;
+  font-size: 18px;
+}
+
+.motivation-actions {
+  display: flex;
+  align-items: stretch;
+  justify-content: flex-end;
+  gap: 7px;
+}
+
+.motivation-actions button {
+  min-height: 42px;
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.motivation-actions button:hover {
+  border-color: #9acfc1;
+  background: var(--mint-soft);
+}
+
+#motivationReminder {
+  display: grid;
+  align-content: center;
+  gap: 1px;
+  text-align: left;
+}
+
+#motivationReminder small {
+  color: var(--teal);
+  font-size: 8px;
+}
+
+.motivation-modal {
+  width: min(820px, 100%);
+  max-height: min(90vh, 880px);
+  overflow-y: auto;
+  padding: 28px;
+  text-align: left;
+}
+
+.motivation-modal-heading {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding-right: 38px;
+}
+
+.motivation-modal-heading h2 {
+  margin: 5px 0 3px;
+  font-size: 21px;
+}
+
+.motivation-modal-heading p {
+  max-width: none;
+  margin: 0;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.55;
+}
+
+.motivation-modal-summary {
+  margin: 20px 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.motivation-modal-summary > div {
+  min-height: 72px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 13px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: var(--mint-soft);
+}
+
+.motivation-modal-summary span {
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.motivation-modal-summary strong {
+  color: var(--teal);
+  font: 800 15px/1.25 "Manrope";
+}
+
+.point-rules {
+  margin: -8px 0 20px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 7px;
+}
+
+.point-rules span {
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--canvas);
+  color: var(--muted);
+  font-size: 7px;
+  text-align: center;
+}
+
+.point-rules b {
+  display: block;
+  margin-bottom: 2px;
+  color: var(--teal);
+  font-size: 9px;
+}
+
+.achievement-section,
+.reminder-section {
+  padding-top: 17px;
+  border-top: 1px solid var(--line);
+}
+
+.reminder-section {
+  margin-top: 20px;
+}
+
+.motivation-section-title {
+  margin-bottom: 12px;
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 15px;
+}
+
+.motivation-section-title h3 {
+  margin: 4px 0 0;
+  font-size: 15px;
+}
+
+.motivation-section-title > small {
+  margin: 0;
+  color: var(--muted);
+  font-size: 8px;
+}
+
+.achievement-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.achievement-card {
+  min-height: 80px;
+  padding: 11px;
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--canvas);
+  opacity: .58;
+}
+
+.achievement-card.unlocked {
+  border-color: #edcf87;
+  background: #fff9e9;
+  opacity: 1;
+  box-shadow: 0 6px 14px rgba(208, 153, 44, .08);
+}
+
+.achievement-card > span {
+  width: 28px;
+  height: 28px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  background: var(--paper);
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.achievement-card.unlocked > span {
+  background: #ffe7a5;
+  color: #9a651a;
+}
+
+.achievement-card strong {
+  display: block;
+  color: var(--ink);
+  font-size: 9px;
+}
+
+.achievement-card small {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 7px;
+  line-height: 1.45;
+}
+
+.reminder-controls {
+  display: grid;
+  grid-template-columns: 1fr 150px;
+  gap: 10px;
+}
+
+.reminder-switch,
+.reminder-time {
+  min-height: 64px;
+  padding: 11px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--canvas);
+}
+
+.reminder-switch input {
+  width: 17px;
+  height: 17px;
+  accent-color: var(--teal);
+}
+
+.reminder-switch span {
+  display: grid;
+  gap: 2px;
+}
+
+.reminder-switch b {
+  color: var(--ink);
+  font-size: 10px;
+}
+
+.reminder-switch small {
+  margin: 0;
+  color: var(--muted);
+  font-size: 8px;
+}
+
+.reminder-time {
+  align-items: stretch;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.reminder-time span {
+  color: var(--muted);
+  font-size: 8px;
+  font-weight: 800;
+}
+
+.reminder-time input {
+  width: 100%;
+  min-height: 30px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--ink);
+  font: 800 12px "Manrope";
+}
+
+.reminder-permission {
+  max-width: none !important;
+  margin: 8px 0 !important;
+  color: var(--muted) !important;
+  font-size: 8px !important;
+  line-height: 1.5 !important;
+}
+
+.reminder-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.reminder-actions .primary-button {
+  min-width: 180px;
+  padding: 10px 16px;
+}
+
+.reminder-actions .ghost-button {
+  flex: 1;
+}
+
+.reminder-note {
+  margin: 9px 0 0 !important;
+  color: var(--muted);
+  font-size: 8px !important;
+  line-height: 1.55;
+}
+
+.motivation-toasts {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 100;
+  display: grid;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.motivation-toast {
+  min-width: 210px;
+  max-width: min(360px, calc(100vw - 40px));
+  padding: 11px 14px;
+  border: 1px solid #b8ded3;
+  border-radius: 12px;
+  background: var(--paper);
+  color: var(--teal);
+  box-shadow: 0 15px 35px rgba(23, 70, 65, .18);
+  font-size: 10px;
+  font-weight: 800;
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity .22s, transform .22s;
+}
+
+.motivation-toast.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.motivation-toast.goal,
+.motivation-toast.achievement {
+  border-color: #edcf87;
+  color: #9a651a;
+}
+
+:root[data-theme="dark"] .motivation-track {
+  background: #213532;
+}
+
+:root[data-theme="dark"] .motivation-streak > span {
+  background: #3b2c19;
+  color: #f3b94f;
+}
+
+:root[data-theme="dark"] .achievement-card.unlocked {
+  border-color: #66542f;
+  background: #302817;
+}
+
+:root[data-theme="dark"] .achievement-card.unlocked > span {
+  background: #4b3a1c;
+  color: #f3c761;
+}
+
+@media (max-width: 1180px) {
+  .motivation-bar {
+    grid-template-columns: 1fr 1.2fr 1fr auto;
+  }
+  .motivation-streak {
+    display: none;
+  }
+  .achievement-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 760px) {
+  .motivation-bar {
+    width: min(100% - 20px, 620px);
+    grid-template-columns: 1fr 1fr;
+    gap: 13px;
+    padding: 14px;
+  }
+  .motivation-level-progress {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+  .motivation-daily {
+    grid-column: 1 / -1;
+  }
+  .motivation-actions {
+    grid-column: 1 / -1;
+    justify-content: stretch;
+  }
+  .motivation-actions button {
+    flex: 1;
+  }
+  .motivation-modal {
+    padding: 22px 18px;
+  }
+  .motivation-modal-heading {
+    align-items: flex-start;
+    padding-right: 34px;
+  }
+  .motivation-modal-summary,
+  .reminder-controls {
+    grid-template-columns: 1fr;
+  }
+  .point-rules {
+    grid-template-columns: 1fr 1fr;
+  }
+  .achievement-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .reminder-actions {
+    flex-direction: column;
+  }
+  .reminder-actions .primary-button {
+    width: 100%;
+  }
+  .motivation-toasts {
+    right: 10px;
+    bottom: 10px;
+  }
+}
+
+@media (max-width: 430px) {
+  .achievement-grid {
+    grid-template-columns: 1fr;
+  }
+}
