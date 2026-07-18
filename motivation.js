@@ -9,7 +9,7 @@ import {
   getStudySummary,
   normalizeMotivationState,
   splitStudyDuration,
-} from "./motivation-core.js?v=1.5.0";
+} from "./motivation-core.js?v=1.5.1";
 
 const STORAGE_KEY = "deutschmeister-motivation-v1";
 const $ = (selector) => document.querySelector(selector);
@@ -36,6 +36,7 @@ function formatDuration(secondsInput, { clock = false } = {}) {
   const rest = seconds % 60;
   if (clock) return [hours, minutes, rest].map((value) => String(value).padStart(2, "0")).join(":");
   if (hours) return hours + " Std. " + minutes + " Min.";
+  if (seconds > 0 && seconds < 60) return "<1 Min.";
   return Math.floor(seconds / 60) + " Min.";
 }
 
