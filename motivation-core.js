@@ -1,4 +1,6 @@
 export const DAILY_GOAL = 10;
+export const STUDY_REWARD_SECONDS = 5 * 60;
+export const STUDY_DAY_SECONDS = 10 * 60;
 
 export const LEVELS = [
   { level: 1, name: "Starter", xp: 0 },
@@ -15,7 +17,8 @@ export const ACHIEVEMENTS = [
   { id: "cards_25", icon: "▤", title: "Wortstarter", description: "25 fällige Wörter wiederholt", test: (state) => state.stats.cardsReviewed >= 25 },
   { id: "cards_100", icon: "◆", title: "Wortjäger", description: "100 fällige Wörter wiederholt", test: (state) => state.stats.cardsReviewed >= 100 },
   { id: "goal_3", icon: "⚡", title: "Im Rhythmus", description: "Drei Tagesziele erreicht", test: (state) => Object.keys(state.completedDays).length >= 3 },
-  { id: "streak_7", icon: "♨", title: "Sieben-Tage-Serie", description: "Sieben Tagesziele in Folge erreicht", test: (state) => calculateStreak(state.completedDays) >= 7 },
+  { id: "streak_7", icon: "♨", title: "Sieben-Tage-Serie", description: "Sieben Lerntage in Folge erreicht", test: (state) => calculateStreak(getActivityDays(state)) >= 7 },
+  { id: "study_60", icon: "◷", title: "Fokusstunde", description: "60 Minuten konzentriert gelernt", test: (state) => state.study.totalSeconds >= 60 * 60 },
   { id: "first_module", icon: "✓", title: "Modul geschafft", description: "Das erste Modul abgeschlossen", test: (state) => state.stats.modulesCompleted >= 1 },
   { id: "modules_5", icon: "⬡", title: "Kapitelkurs", description: "Fünf Module abgeschlossen", test: (state) => state.stats.modulesCompleted >= 5 },
   { id: "xp_1000", icon: "★", title: "Punktesammler", description: "1.000 XP erreicht", test: (state) => state.xp >= 1000 },
@@ -30,7 +33,7 @@ export function dateKey(date = new Date()) {
 
 export function createInitialMotivationState() {
   return {
-    version: 1,
+    version: 2,
     xp: 0,
     events: {},
     dailyUnits: {},
@@ -40,6 +43,13 @@ export function createInitialMotivationState() {
       cardsReviewed: 0,
       homeworkCompleted: 0,
       modulesCompleted: 0,
+      studyBlocks: 0,
+    },
+    study: {
+      totalSeconds: 0,
+      dailySeconds: {},
+      sessions: [],
+      active: null,
     },
     settings: {
       sound: true,
@@ -53,6 +63,22 @@ export function createInitialMotivationState() {
 export function normalizeMotivationState(input) {
   const initial = createInitialMotivationState();
   const source = input && typeof input === "object" ? input : {};
+  const studySource = source.study && typeof source.study === "object" ? source.study : {};
+  const dailySeconds = {};
+  for (const [key, seconds] of Object.entries(studySource.dailySeconds && typeof studySource.dailySeconds === "object" ? studySource.dailySeconds : {})) {
+    if (/^\d{4}-\d{2}-\d{2}$/.test(key)) dailySeconds[key] = Math.max(0, Math.round(Number(seconds) || 0));
+  }
+  const recordedSeconds = Object.values(dailySeconds).reduce((sum, seconds) => sum + seconds, 0);
+  const activeSource = studySource.active && typeof studySource.active === "object" ? studySource.active : null;
+  const active = activeSource ? {
+    id: String(activeSource.id || "session-restored"),
+    startedAt: String(activeSource.startedAt || new Date().toISOString()),
+    lastRecordedAt: String(activeSource.lastRecordedAt || activeSource.startedAt || new Date().toISOString()),
+    accumulatedSeconds: Math.max(0, Math.round(Number(activeSource.accumulatedSeconds) || 0)),
+    running: Boolean(activeSource.running),
+    moduleId: String(activeSource.moduleId || ""),
+    moduleTitle: String(activeSource.moduleTitle || "Freies Lernen"),
+  } : null;
   return {
     ...initial,
     ...source,
@@ -65,10 +91,89 @@ export function normalizeMotivationState(input) {
       ...initial.stats,
       ...(source.stats && typeof source.stats === "object" ? source.stats : {}),
     },
+    study: {
+      ...initial.study,
+      ...studySource,
+      totalSeconds: Math.max(recordedSeconds, Math.max(0, Math.round(Number(studySource.totalSeconds) || 0))),
+      dailySeconds,
+      sessions: Array.isArray(studySource.sessions) ? studySource.sessions.filter(Boolean).slice(-365) : [],
+      active,
+    },
     settings: {
       ...initial.settings,
       ...(source.settings && typeof source.settings === "object" ? source.settings : {}),
     },
+  };
+}
+
+export function splitStudyDuration(startInput, endInput) {
+  const start = new Date(startInput);
+  const end = new Date(endInput);
+  if (!Number.isFinite(start.getTime()) || !Number.isFinite(end.getTime()) || end <= start) return {};
+  const result = {};
+  let cursor = new Date(start);
+  while (cursor < end) {
+    const nextDay = new Date(cursor);
+    nextDay.setHours(24, 0, 0, 0);
+    const boundary = nextDay < end ? nextDay : end;
+    const seconds = Math.max(0, Math.floor((boundary - cursor) / 1000));
+    const key = dateKey(cursor);
+    result[key] = (result[key] || 0) + seconds;
+    cursor = boundary;
+  }
+  return result;
+}
+
+export function getActivityDays(stateInput) {
+  const state = normalizeMotivationState(stateInput);
+  const days = { ...state.completedDays };
+  for (const [key, seconds] of Object.entries(state.study.dailySeconds)) {
+    if ((Number(seconds) || 0) >= STUDY_DAY_SECONDS) days[key] = true;
+  }
+  return days;
+}
+
+export function calculateBestStreak(daysInput) {
+  const keys = Object.keys(daysInput && typeof daysInput === "object" ? daysInput : {})
+    .filter((key) => daysInput[key] && /^\d{4}-\d{2}-\d{2}$/.test(key))
+    .sort();
+  let best = 0;
+  let current = 0;
+  let previous = null;
+  for (const key of keys) {
+    const date = new Date(key + "T12:00:00");
+    if (previous) {
+      const expected = new Date(previous);
+      expected.setDate(expected.getDate() + 1);
+      current = dateKey(expected) === key ? current + 1 : 1;
+    } else {
+      current = 1;
+    }
+    best = Math.max(best, current);
+    previous = date;
+  }
+  return best;
+}
+
+export function getStudySummary(stateInput, now = new Date()) {
+  const state = normalizeMotivationState(stateInput);
+  const today = dateKey(now);
+  let last7Seconds = 0;
+  const cursor = new Date(now);
+  cursor.setHours(12, 0, 0, 0);
+  for (let index = 0; index < 7; index += 1) {
+    last7Seconds += Math.max(0, Number(state.study.dailySeconds[dateKey(cursor)]) || 0);
+    cursor.setDate(cursor.getDate() - 1);
+  }
+  const activityDays = getActivityDays(state);
+  return {
+    todaySeconds: Math.max(0, Number(state.study.dailySeconds[today]) || 0),
+    last7Seconds,
+    totalSeconds: state.study.totalSeconds,
+    sessions: state.study.sessions.length,
+    currentStreak: calculateStreak(activityDays, now),
+    bestStreak: calculateBestStreak(activityDays),
+    activityDays,
   };
 }
 
@@ -120,7 +225,8 @@ export function awardMotivationEvent(stateInput, event, now = new Date()) {
   const beforeLevel = getLevelProgress(state.xp).current.level;
   const xp = Math.max(0, Math.round(Number(event.xp) || 0));
   const units = Math.max(0, Math.round(Number(event.units) || 0));
-  const today = dateKey(now);
+  const requestedDay = String(event?.day || "");
+  const today = /^\d{4}-\d{2}-\d{2}$/.test(requestedDay) ? requestedDay : dateKey(now);
   state.events[id] = {
     xp,
     at: now.toISOString(),
@@ -132,6 +238,7 @@ export function awardMotivationEvent(stateInput, event, now = new Date()) {
   if (event.kind === "card") state.stats.cardsReviewed += 1;
   if (event.kind === "homework") state.stats.homeworkCompleted += 1;
   if (event.kind === "module") state.stats.modulesCompleted += 1;
+  if (event.kind === "study") state.stats.studyBlocks += 1;
 
   let dailyBonus = 0;
   if (state.dailyUnits[today] >= DAILY_GOAL && !state.completedDays[today]) {
