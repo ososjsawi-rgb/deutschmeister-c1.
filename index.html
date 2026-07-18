@@ -96,7 +96,18 @@
           <span aria-hidden="true">♨</span>
           <div><small>SERIE</small><strong id="motivationStreak">0 Tage</strong></div>
         </div>
+        <div class="study-clock" aria-label="Lernzeituhr">
+          <div class="study-clock-readout">
+            <small>LERNZEIT</small>
+            <strong id="studyTimerDisplay">00:00:00</strong>
+          </div>
+          <div class="study-clock-actions">
+            <button id="studyTimerToggle" type="button" aria-pressed="false">▶ Start</button>
+            <button id="studyTimerStop" type="button" disabled>■ Ende</button>
+          </div>
+        </div>
         <div class="motivation-actions">
+          <button id="motivationDashboard" type="button">▦ Statistik</button>
           <button id="motivationSound" type="button" aria-pressed="true">🔊 Töne an</button>
           <button id="motivationReminder" type="button">
             <span>🔔 Erinnerung</span>
@@ -373,22 +384,48 @@
           <span class="motivation-mark large" aria-hidden="true">✦</span>
           <div>
             <span class="eyebrow">MOTIVATION</span>
-            <h2>Punkte, Abzeichen und Erinnerung</h2>
-            <p>Belohnt werden echte Lernaktionen. Die Bewertung einer Karte verändert die Punktzahl nicht.</p>
+            <h2>Lernzeit, Statistik und Motivation</h2>
+            <p>Deine Lernzeit wird nur auf diesem Gerät gespeichert und mit Punkten, Kalender und Serie verbunden.</p>
           </div>
         </div>
 
         <div class="motivation-modal-summary">
           <div><span>Aktuelle Stufe</span><strong id="motivationModalLevel">Stufe 1 · Starter</strong></div>
           <div><span>Gesamtpunktzahl</span><strong id="motivationModalXp">0 XP</strong></div>
+          <div><span>Heute gelernt</span><strong id="studyToday">0 Min.</strong></div>
+          <div><span>Letzte 7 Tage</span><strong id="studyWeek">0 Min.</strong></div>
+          <div><span>Gesamte Lernzeit</span><strong id="studyTotal">0 Min.</strong></div>
+          <div><span>Lernsitzungen</span><strong id="studySessions">0</strong></div>
+          <div><span>Aktuelle Serie</span><strong id="studyCurrentStreak">0 Tage</strong></div>
+          <div><span>Beste Serie</span><strong id="studyBestStreak">0 Tage</strong></div>
         </div>
 
         <div class="point-rules" aria-label="Punkteregeln">
+          <span><b>+5 XP</b> je 5 echte Lernminuten</span>
           <span><b>+5 XP</b> fälliges Wort wiederholt</span>
           <span><b>+25 XP</b> Hausaufgabe erledigt</span>
           <span><b>+120 XP</b> Modul abgeschlossen</span>
           <span><b>+25 XP</b> Tagesziel erreicht</span>
         </div>
+
+        <section class="study-calendar-section">
+          <div class="motivation-section-title calendar-title">
+            <div><span class="eyebrow">LERNKALENDER</span><h3>Deine Aktivität</h3></div>
+            <div class="calendar-navigation">
+              <button id="studyCalendarPrevious" type="button" aria-label="Vorheriger Monat">‹</button>
+              <strong id="studyCalendarLabel"></strong>
+              <button id="studyCalendarNext" type="button" aria-label="Nächster Monat">›</button>
+            </div>
+          </div>
+          <div class="study-calendar-weekdays" aria-hidden="true">
+            <span>Mo</span><span>Di</span><span>Mi</span><span>Do</span><span>Fr</span><span>Sa</span><span>So</span>
+          </div>
+          <div id="studyCalendar" class="study-calendar" aria-label="Kalender der Lernzeit"></div>
+          <div class="study-calendar-legend">
+            <span>Weniger</span><i class="intensity-0"></i><i class="intensity-1"></i><i class="intensity-2"></i><i class="intensity-3"></i><i class="intensity-4"></i><span>Mehr</span>
+            <small>Ein Lerntag zählt ab 10 Minuten oder mit erreichtem Tagesziel.</small>
+          </div>
+        </section>
 
         <section class="achievement-section">
           <div class="motivation-section-title">
