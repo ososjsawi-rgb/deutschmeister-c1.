@@ -67,7 +67,9 @@ let sessionBaseCostUsd = 0;
 let pendingGeminiUsage = null;
 let progress = loadProgress();
 let latestCheckpoint = localStorage.getItem("aspekte-checkpoint") || "";
-const motivation = initMotivation();
+const motivation = initMotivation({
+  getStudyContext: () => ({ moduleId: selectedModule.id, moduleTitle: selectedModule.title }),
+});
 motivation.syncProgress(progress, chapters);
 const flashcards = initFlashcards({
   chapters,
@@ -548,6 +550,7 @@ async function startSession() {
     elements.liveDot.classList.add("active");
     elements.teacherOrb.classList.add("live");
     startTimer();
+    motivation.ensureStudyTimer();
   } catch (error) {
     console.error(error);
     elements.sessionStatus.textContent = "Die Stunde konnte nicht gestartet werden";
@@ -769,6 +772,7 @@ function updateFallbackPrompt() {
 }
 
 function openFallbackPrompt() {
+  motivation.ensureStudyTimer();
   updateFallbackPrompt();
   elements.promptModal.classList.remove("hidden");
   requestAnimationFrame(() => elements.fallbackPromptText.scrollTop = 0);
