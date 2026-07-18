@@ -4,7 +4,7 @@ import { buildNoApiPrompt, buildTeacherPrompt } from "./teacher-prompt.js";
 import { deleteBook, loadBook, loadProgress, saveBook, saveProgress } from "./storage.js";
 import { GeminiLiveSession } from "./gemini-live.js";
 import { initFlashcards } from "./flashcards.js";
-import { initMotivation } from "./motivation.js?v=1.5.0";
+import { initMotivation } from "./motivation.js?v=1.5.1";
 import {
   PROVIDERS,
   calculateGeminiPaidEquivalent,
