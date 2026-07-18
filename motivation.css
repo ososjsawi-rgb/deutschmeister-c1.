@@ -4,7 +4,7 @@
   margin: 12px auto 0;
   padding: 12px 16px;
   display: grid;
-  grid-template-columns: minmax(190px, .8fr) minmax(260px, 1.3fr) minmax(170px, .75fr) minmax(110px, .5fr) auto;
+  grid-template-columns: minmax(175px, .7fr) minmax(220px, 1fr) minmax(145px, .62fr) minmax(100px, .42fr) minmax(215px, .8fr) auto;
   align-items: center;
   gap: 18px;
 }
@@ -111,6 +111,69 @@
   font-size: 18px;
 }
 
+.study-clock {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: var(--canvas);
+}
+
+.study-clock-readout {
+  min-width: 76px;
+  display: grid;
+  gap: 3px;
+}
+
+.study-clock-readout small {
+  color: var(--muted);
+  font: 800 7px/1 "Manrope";
+  letter-spacing: .8px;
+}
+
+.study-clock-readout strong {
+  color: var(--ink);
+  font: 800 13px/1 "Manrope";
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .25px;
+}
+
+.study-clock-readout strong.running {
+  color: var(--teal);
+}
+
+.study-clock-actions {
+  display: flex;
+  gap: 5px;
+}
+
+.study-clock-actions button {
+  min-height: 30px;
+  padding: 6px 8px;
+  border: 1px solid #b9ddd4;
+  border-radius: 8px;
+  background: var(--paper);
+  color: var(--teal);
+  font-size: 8px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.study-clock-actions button:first-child[aria-pressed="true"] {
+  border-color: #e6c57e;
+  background: #fff7e5;
+  color: #a26713;
+}
+
+.study-clock-actions button:disabled {
+  opacity: .4;
+  cursor: not-allowed;
+}
+
 .motivation-actions {
   display: flex;
   align-items: stretch;
@@ -147,7 +210,7 @@
 }
 
 .motivation-modal {
-  width: min(820px, 100%);
+  width: min(940px, 100%);
   max-height: min(90vh, 880px);
   overflow-y: auto;
   padding: 28px;
@@ -177,7 +240,7 @@
 .motivation-modal-summary {
   margin: 20px 0;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(4, 1fr);
   gap: 10px;
 }
 
@@ -205,7 +268,7 @@
 .point-rules {
   margin: -8px 0 20px;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 7px;
 }
 
@@ -224,6 +287,142 @@
   margin-bottom: 2px;
   color: var(--teal);
   font-size: 9px;
+}
+
+.study-calendar-section {
+  padding: 18px 0 20px;
+  border-top: 1px solid var(--line);
+}
+
+.calendar-title {
+  align-items: center;
+}
+
+.calendar-navigation {
+  display: grid;
+  grid-template-columns: 30px minmax(125px, auto) 30px;
+  align-items: center;
+  gap: 5px;
+}
+
+.calendar-navigation strong {
+  color: var(--ink);
+  font-size: 10px;
+  text-align: center;
+  text-transform: capitalize;
+}
+
+.calendar-navigation button {
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--paper);
+  color: var(--teal);
+  font-size: 20px;
+  line-height: 1;
+}
+
+.calendar-navigation button:disabled {
+  opacity: .35;
+  cursor: not-allowed;
+}
+
+.study-calendar-weekdays,
+.study-calendar {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.study-calendar-weekdays {
+  margin: 14px 0 6px;
+}
+
+.study-calendar-weekdays span {
+  color: var(--muted);
+  font: 800 8px/1 "Manrope";
+  text-align: center;
+}
+
+.study-calendar-day {
+  min-height: 50px;
+  position: relative;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 3px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--canvas);
+  color: var(--ink);
+}
+
+.study-calendar-day span {
+  font: 800 10px/1 "Manrope";
+}
+
+.study-calendar-day small {
+  min-height: 8px;
+  margin: 0;
+  color: var(--muted);
+  font: 700 7px/1 "Manrope";
+}
+
+.study-calendar-day.outside {
+  visibility: hidden;
+}
+
+.study-calendar-day.today {
+  box-shadow: inset 0 0 0 2px var(--teal);
+}
+
+.study-calendar-day.active-day::after {
+  content: "";
+  width: 5px;
+  height: 5px;
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  border-radius: 50%;
+  background: #f0a934;
+}
+
+.study-calendar-day.intensity-1,
+.study-calendar-legend .intensity-1 { background: #e2f5ef; border-color: #c9eadf; }
+.study-calendar-day.intensity-2,
+.study-calendar-legend .intensity-2 { background: #a8dfce; border-color: #8bd0bb; }
+.study-calendar-day.intensity-3,
+.study-calendar-legend .intensity-3 { background: #4fbd9d; border-color: #3cac8d; color: #073f37; }
+.study-calendar-day.intensity-4,
+.study-calendar-legend .intensity-4 { background: #0f766e; border-color: #0b655e; color: white; }
+
+.study-calendar-day.intensity-3 small,
+.study-calendar-day.intensity-4 small { color: currentColor; opacity: .78; }
+
+.study-calendar-legend {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+  color: var(--muted);
+  font-size: 7px;
+}
+
+.study-calendar-legend i {
+  width: 13px;
+  height: 13px;
+  display: block;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--canvas);
+}
+
+.study-calendar-legend small {
+  margin: 0 0 0 10px;
+  color: var(--muted);
+  font-size: 7px;
 }
 
 .achievement-section,
@@ -448,6 +647,21 @@
   color: #f3b94f;
 }
 
+:root[data-theme="dark"] .study-clock-actions button:first-child[aria-pressed="true"] {
+  border-color: #67562f;
+  background: #352b18;
+  color: #f3c761;
+}
+
+:root[data-theme="dark"] .study-calendar-day.intensity-1,
+:root[data-theme="dark"] .study-calendar-legend .intensity-1 { background: #17342e; border-color: #285348; }
+:root[data-theme="dark"] .study-calendar-day.intensity-2,
+:root[data-theme="dark"] .study-calendar-legend .intensity-2 { background: #205f50; border-color: #347b68; }
+:root[data-theme="dark"] .study-calendar-day.intensity-3,
+:root[data-theme="dark"] .study-calendar-legend .intensity-3 { background: #318f76; border-color: #4aa58d; color: #e9fff8; }
+:root[data-theme="dark"] .study-calendar-day.intensity-4,
+:root[data-theme="dark"] .study-calendar-legend .intensity-4 { background: #52d1b6; border-color: #69dec5; color: #071f1b; }
+
 :root[data-theme="dark"] .achievement-card.unlocked {
   border-color: #66542f;
   background: #302817;
@@ -460,13 +674,16 @@
 
 @media (max-width: 1180px) {
   .motivation-bar {
-    grid-template-columns: 1fr 1.2fr 1fr auto;
+    grid-template-columns: 1fr 1.2fr 1fr minmax(210px, .9fr) auto;
   }
   .motivation-streak {
     display: none;
   }
   .achievement-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+  .motivation-modal-summary {
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 
@@ -482,6 +699,9 @@
     grid-row: 2;
   }
   .motivation-daily {
+    grid-column: 1 / -1;
+  }
+  .study-clock {
     grid-column: 1 / -1;
   }
   .motivation-actions {
@@ -500,7 +720,7 @@
   }
   .motivation-modal-summary,
   .reminder-controls {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
   }
   .point-rules {
     grid-template-columns: 1fr 1fr;
@@ -518,10 +738,35 @@
     right: 10px;
     bottom: 10px;
   }
+  .study-calendar-day {
+    min-height: 43px;
+  }
+  .study-calendar-legend small {
+    display: none;
+  }
 }
 
 @media (max-width: 430px) {
+  .motivation-modal-summary {
+    grid-template-columns: 1fr;
+  }
   .achievement-grid {
     grid-template-columns: 1fr;
+  }
+  .calendar-title {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .calendar-navigation {
+    width: 100%;
+    grid-template-columns: 34px 1fr 34px;
+  }
+  .study-calendar-weekdays,
+  .study-calendar {
+    gap: 4px;
+  }
+  .study-calendar-day {
+    min-height: 39px;
+    border-radius: 8px;
   }
 }
