@@ -1,12 +1,14 @@
 import {
   ACHIEVEMENTS,
   DAILY_GOAL,
+  STUDY_REWARD_SECONDS,
   awardMotivationEvent,
   buildDailyReminderIcs,
-  calculateStreak,
   dateKey,
   getLevelProgress,
+  getStudySummary,
   normalizeMotivationState,
+  splitStudyDuration,
 } from "./motivation-core.js";
 
 const STORAGE_KEY = "deutschmeister-motivation-v1";
@@ -27,7 +29,17 @@ function notificationPermissionLabel() {
   return "Der Browser fragt beim Speichern nach deiner Erlaubnis.";
 }
 
-export function initMotivation() {
+function formatDuration(secondsInput, { clock = false } = {}) {
+  const seconds = Math.max(0, Math.floor(Number(secondsInput) || 0));
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const rest = seconds % 60;
+  if (clock) return [hours, minutes, rest].map((value) => String(value).padStart(2, "0")).join(":");
+  if (hours) return hours + " Std. " + minutes + " Min.";
+  return Math.floor(seconds / 60) + " Min.";
+}
+
+export function initMotivation({ getStudyContext } = {}) {
   const elements = {
     level: $("#motivationLevel"),
     xp: $("#motivationXp"),
@@ -36,6 +48,10 @@ export function initMotivation() {
     daily: $("#motivationDaily"),
     dailyBar: $("#motivationDailyBar"),
     streak: $("#motivationStreak"),
+    studyTimerDisplay: $("#studyTimerDisplay"),
+    studyTimerToggle: $("#studyTimerToggle"),
+    studyTimerStop: $("#studyTimerStop"),
+    dashboard: $("#motivationDashboard"),
     sound: $("#motivationSound"),
     reminder: $("#motivationReminder"),
     reminderStatus: $("#motivationReminderStatus"),
@@ -43,6 +59,16 @@ export function initMotivation() {
     close: $("#closeMotivationModal"),
     modalLevel: $("#motivationModalLevel"),
     modalXp: $("#motivationModalXp"),
+    studyToday: $("#studyToday"),
+    studyWeek: $("#studyWeek"),
+    studyTotal: $("#studyTotal"),
+    studySessions: $("#studySessions"),
+    studyCurrentStreak: $("#studyCurrentStreak"),
+    studyBestStreak: $("#studyBestStreak"),
+    studyCalendar: $("#studyCalendar"),
+    studyCalendarLabel: $("#studyCalendarLabel"),
+    studyCalendarPrevious: $("#studyCalendarPrevious"),
+    studyCalendarNext: $("#studyCalendarNext"),
     achievements: $("#achievementGrid"),
     reminderEnabled: $("#reminderEnabled"),
     reminderTime: $("#reminderTime"),
@@ -54,6 +80,10 @@ export function initMotivation() {
 
   let state = loadState();
   let audioContext = null;
+  let studyTickCount = 0;
+  const calendarCursor = new Date();
+  calendarCursor.setDate(1);
+  calendarCursor.setHours(12, 0, 0, 0);
 
   function save() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -99,6 +129,222 @@ export function initMotivation() {
     }, 2600);
   }
 
+  function activeStudySeconds(now = new Date()) {
+    const active = state.study.active;
+    if (!active) return 0;
+    const stored = Math.max(0, Math.floor(Number(active.accumulatedSeconds) || 0));
+    if (!active.running) return stored;
+    const last = new Date(active.lastRecordedAt);
+    const pending = Number.isFinite(last.getTime()) ? Math.max(0, Math.floor((now - last) / 1000)) : 0;
+    return stored + pending;
+  }
+
+  function renderStudyClock() {
+    const active = state.study.active;
+    const running = Boolean(active?.running);
+    elements.studyTimerDisplay.textContent = formatDuration(activeStudySeconds(), { clock: true });
+    elements.studyTimerDisplay.classList.toggle("running", running);
+    elements.studyTimerToggle.textContent = running ? "Ⅱ Pause" : active ? "▶ Weiter" : "▶ Start";
+    elements.studyTimerToggle.setAttribute("aria-pressed", String(running));
+    elements.studyTimerStop.disabled = !active;
+  }
+
+  function renderStudyCalendar() {
+    const year = calendarCursor.getFullYear();
+    const month = calendarCursor.getMonth();
+    const today = new Date();
+    const summary = getStudySummary(state, today);
+    const firstDay = new Date(year, month, 1, 12);
+    const offset = (firstDay.getDay() + 6) % 7;
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const cells = Math.ceil((offset + daysInMonth) / 7) * 7;
+    elements.studyCalendarLabel.textContent = new Intl.DateTimeFormat("de-DE", {
+      month: "long",
+      year: "numeric",
+    }).format(firstDay);
+    elements.studyCalendar.replaceChildren();
+
+    for (let index = 0; index < cells; index += 1) {
+      const button = document.createElement("div");
+      button.className = "study-calendar-day";
+      const day = index - offset + 1;
+      if (day < 1 || day > daysInMonth) {
+        button.classList.add("outside");
+        button.setAttribute("aria-hidden", "true");
+        elements.studyCalendar.append(button);
+        continue;
+      }
+      const date = new Date(year, month, day, 12);
+      const key = dateKey(date);
+      const seconds = Math.max(0, Number(state.study.dailySeconds[key]) || 0);
+      const minutes = Math.floor(seconds / 60);
+      const intensity = minutes >= 45 ? 4 : minutes >= 25 ? 3 : minutes >= 10 ? 2 : minutes > 0 ? 1 : 0;
+      button.classList.add("intensity-" + intensity);
+      if (summary.activityDays[key]) button.classList.add("active-day");
+      if (key === dateKey(today)) button.classList.add("today");
+      button.title = key + " · " + minutes + " Lernminuten";
+      const number = document.createElement("span");
+      number.textContent = String(day);
+      const duration = document.createElement("small");
+      duration.textContent = minutes ? minutes + "m" : "";
+      button.append(number, duration);
+      elements.studyCalendar.append(button);
+    }
+
+    const currentMonth = new Date(today.getFullYear(), today.getMonth(), 1, 12);
+    elements.studyCalendarNext.disabled = calendarCursor >= currentMonth;
+  }
+
+  function renderStudySummary() {
+    const summary = getStudySummary(state);
+    elements.studyToday.textContent = formatDuration(summary.todaySeconds);
+    elements.studyWeek.textContent = formatDuration(summary.last7Seconds);
+    elements.studyTotal.textContent = formatDuration(summary.totalSeconds);
+    elements.studySessions.textContent = summary.sessions.toLocaleString("de-DE");
+    elements.studyCurrentStreak.textContent = summary.currentStreak + (summary.currentStreak === 1 ? " Tag" : " Tage");
+    elements.studyBestStreak.textContent = summary.bestStreak + (summary.bestStreak === 1 ? " Tag" : " Tage");
+    renderStudyCalendar();
+  }
+
+  function rewardStudyBlocks(beforeByDay, afterByDay) {
+    let xp = 0;
+    let dailyBonus = 0;
+    let unlocked = false;
+    for (const [day, afterSeconds] of Object.entries(afterByDay)) {
+      const beforeSeconds = Math.max(0, Number(beforeByDay[day]) || 0);
+      const firstBlock = Math.floor(beforeSeconds / STUDY_REWARD_SECONDS) + 1;
+      const lastBlock = Math.floor(afterSeconds / STUDY_REWARD_SECONDS);
+      for (let block = firstBlock; block <= lastBlock; block += 1) {
+        const result = award({
+          id: "study:" + day + ":" + block,
+          day,
+          xp: 5,
+          units: 1,
+          kind: "study",
+          label: "5 Lernminuten",
+        }, { silent: true });
+        if (!result.awarded) continue;
+        xp += result.xpAwarded;
+        dailyBonus += result.dailyBonus;
+        unlocked ||= result.unlocked.length > 0 || result.leveledUp;
+      }
+    }
+    if (xp) {
+      showToast("+" + xp + " XP · konzentrierte Lernzeit");
+      playSound(unlocked ? "achievement" : "xp");
+    }
+    if (dailyBonus) setTimeout(() => showToast("+" + dailyBonus + " XP · Tagesziel erreicht", "goal"), 380);
+  }
+
+  function creditStudyInterval(start, end, { announce = true } = {}) {
+    const allocation = splitStudyDuration(start, end);
+    const beforeByDay = {};
+    const afterByDay = {};
+    let added = 0;
+    for (const [day, secondsInput] of Object.entries(allocation)) {
+      const seconds = Math.max(0, Math.floor(Number(secondsInput) || 0));
+      if (!seconds) continue;
+      const before = Math.max(0, Number(state.study.dailySeconds[day]) || 0);
+      beforeByDay[day] = before;
+      afterByDay[day] = before + seconds;
+      state.study.dailySeconds[day] = before + seconds;
+      added += seconds;
+    }
+    state.study.totalSeconds += added;
+    if (announce) rewardStudyBlocks(beforeByDay, afterByDay);
+    else {
+      for (const [day, seconds] of Object.entries(afterByDay)) {
+        const firstBlock = Math.floor((beforeByDay[day] || 0) / STUDY_REWARD_SECONDS) + 1;
+        const lastBlock = Math.floor(seconds / STUDY_REWARD_SECONDS);
+        for (let block = firstBlock; block <= lastBlock; block += 1) {
+          award({ id: "study:" + day + ":" + block, day, xp: 5, units: 1, kind: "study", label: "5 Lernminuten" }, { silent: true });
+        }
+      }
+    }
+    return added;
+  }
+
+  function flushStudyTimer(now = new Date(), { announce = true, capSeconds = Infinity } = {}) {
+    const active = state.study.active;
+    if (!active?.running) return 0;
+    let start = new Date(active.lastRecordedAt);
+    if (!Number.isFinite(start.getTime()) || start > now) start = new Date(now);
+    const available = Math.max(0, Math.floor((now - start) / 1000));
+    const seconds = Math.min(available, Math.max(0, Math.floor(capSeconds)));
+    if (!seconds) return 0;
+    const end = new Date(start.getTime() + seconds * 1000);
+    const added = creditStudyInterval(start, end, { announce });
+    const currentActive = state.study.active;
+    if (!currentActive) return added;
+    currentActive.accumulatedSeconds = Math.max(0, Number(currentActive.accumulatedSeconds) || 0) + added;
+    currentActive.lastRecordedAt = end.toISOString();
+    save();
+    return added;
+  }
+
+  function startStudyTimer({ automatic = false } = {}) {
+    const now = new Date();
+    if (!state.study.active) {
+      const context = typeof getStudyContext === "function" ? getStudyContext() : {};
+      state.study.active = {
+        id: "session-" + now.getTime(),
+        startedAt: now.toISOString(),
+        lastRecordedAt: now.toISOString(),
+        accumulatedSeconds: 0,
+        running: true,
+        moduleId: String(context?.moduleId || ""),
+        moduleTitle: String(context?.moduleTitle || "Freies Lernen"),
+      };
+    } else if (!state.study.active.running) {
+      state.study.active.running = true;
+      state.study.active.lastRecordedAt = now.toISOString();
+    }
+    save();
+    render();
+    showToast(automatic ? "Lernzeituhr automatisch gestartet" : "Lernzeituhr gestartet", "goal");
+    playSound("xp");
+  }
+
+  function pauseStudyTimer({ silent = false } = {}) {
+    if (!state.study.active?.running) return;
+    flushStudyTimer(new Date(), { announce: !silent });
+    state.study.active.running = false;
+    save();
+    render();
+    if (!silent) showToast("Lernzeituhr pausiert", "goal");
+  }
+
+  function stopStudyTimer() {
+    if (!state.study.active) return;
+    if (state.study.active.running) flushStudyTimer(new Date());
+    const active = state.study.active;
+    if (!active) return;
+    const seconds = Math.max(0, Math.floor(Number(active.accumulatedSeconds) || 0));
+    if (seconds > 0) {
+      state.study.sessions.push({
+        id: active.id,
+        startedAt: active.startedAt,
+        endedAt: new Date().toISOString(),
+        seconds,
+        moduleId: active.moduleId || "",
+        moduleTitle: active.moduleTitle || "Freies Lernen",
+      });
+      state.study.sessions = state.study.sessions.slice(-365);
+    }
+    state.study.active = null;
+    save();
+    render();
+    showToast("Lernsitzung gespeichert · " + formatDuration(seconds), "goal");
+    playSound("achievement");
+  }
+
+  function recoverInterruptedTimer() {
+    if (!state.study.active?.running) return;
+    flushStudyTimer(new Date(), { announce: false, capSeconds: 60 });
+    if (state.study.active) state.study.active.running = false;
+    save();
+  }
+
   function renderAchievements() {
     elements.achievements.replaceChildren();
     for (const achievement of ACHIEVEMENTS) {
@@ -121,7 +367,7 @@ export function initMotivation() {
   function render() {
     const level = getLevelProgress(state.xp);
     const todayUnits = Math.min(DAILY_GOAL, Number(state.dailyUnits[dateKey()]) || 0);
-    const streak = calculateStreak(state.completedDays);
+    const study = getStudySummary(state);
     elements.level.textContent = "Stufe " + level.current.level + " · " + level.current.name;
     elements.xp.textContent = state.xp.toLocaleString("de-DE") + " XP";
     elements.progress.style.width = level.percent + "%";
@@ -130,7 +376,7 @@ export function initMotivation() {
       : "Höchste Stufe erreicht";
     elements.daily.textContent = todayUnits + "/" + DAILY_GOAL;
     elements.dailyBar.style.width = Math.round((todayUnits / DAILY_GOAL) * 100) + "%";
-    elements.streak.textContent = streak + (streak === 1 ? " Tag" : " Tage");
+    elements.streak.textContent = study.currentStreak + (study.currentStreak === 1 ? " Tag" : " Tage");
     elements.sound.textContent = state.settings.sound ? "🔊 Töne an" : "🔇 Töne aus";
     elements.sound.setAttribute("aria-pressed", String(state.settings.sound));
     elements.reminderStatus.textContent = state.settings.reminderEnabled
@@ -141,6 +387,8 @@ export function initMotivation() {
     elements.reminderEnabled.checked = Boolean(state.settings.reminderEnabled);
     elements.reminderTime.value = state.settings.reminderTime;
     elements.permission.textContent = notificationPermissionLabel();
+    renderStudyClock();
+    renderStudySummary();
     renderAchievements();
   }
 
@@ -281,6 +529,12 @@ export function initMotivation() {
     render();
     if (state.settings.sound) playSound("xp");
   });
+  elements.studyTimerToggle.addEventListener("click", () => {
+    if (state.study.active?.running) pauseStudyTimer();
+    else startStudyTimer();
+  });
+  elements.studyTimerStop.addEventListener("click", stopStudyTimer);
+  elements.dashboard.addEventListener("click", openModal);
   elements.reminder.addEventListener("click", openModal);
   elements.close.addEventListener("click", closeModal);
   elements.modal.addEventListener("click", (event) => {
@@ -291,19 +545,49 @@ export function initMotivation() {
   });
   elements.saveReminder.addEventListener("click", () => void saveReminderSettings());
   elements.downloadCalendar.addEventListener("click", downloadCalendarReminder);
-  document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "visible") checkReminder();
+  elements.studyCalendarPrevious.addEventListener("click", () => {
+    calendarCursor.setMonth(calendarCursor.getMonth() - 1);
+    renderStudyCalendar();
   });
+  elements.studyCalendarNext.addEventListener("click", () => {
+    if (elements.studyCalendarNext.disabled) return;
+    calendarCursor.setMonth(calendarCursor.getMonth() + 1);
+    renderStudyCalendar();
+  });
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") {
+      checkReminder();
+      flushStudyTimer();
+      render();
+    } else {
+      flushStudyTimer(new Date(), { announce: false });
+    }
+  });
+  window.addEventListener("pagehide", () => pauseStudyTimer({ silent: true }));
 
+  recoverInterruptedTimer();
   render();
   checkReminder();
   setInterval(checkReminder, 30_000);
+  setInterval(() => {
+    studyTickCount += 1;
+    renderStudyClock();
+    if (studyTickCount % 15 === 0) {
+      flushStudyTimer(new Date(), { announce: document.visibilityState === "visible" });
+      render();
+    }
+  }, 1000);
 
   return {
     recordCardReview,
     recordHomework,
     recordModule,
     syncProgress,
+    ensureStudyTimer: () => {
+      if (!state.study.active?.running) startStudyTimer({ automatic: true });
+    },
+    pauseStudyTimer,
+    stopStudyTimer,
     getState: () => structuredClone(state),
     refresh: render,
   };
