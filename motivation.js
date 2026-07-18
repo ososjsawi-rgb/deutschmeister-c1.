@@ -9,7 +9,7 @@ import {
   getStudySummary,
   normalizeMotivationState,
   splitStudyDuration,
-} from "./motivation-core.js";
+} from "./motivation-core.js?v=1.5.0";
 
 const STORAGE_KEY = "deutschmeister-motivation-v1";
 const $ = (selector) => document.querySelector(selector);
